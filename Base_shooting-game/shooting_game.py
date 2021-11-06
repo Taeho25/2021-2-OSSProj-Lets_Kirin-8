@@ -203,7 +203,7 @@ def main():
 #########################
     while inMenu:
         clock.tick(clockTime) 
-#blit()
+#blit()   
         screen.blit(
             background, (0, 0), area=pygame.Rect(
                 0, backgroundLoc, 500, 500))
