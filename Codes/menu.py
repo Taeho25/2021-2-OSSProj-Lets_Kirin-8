@@ -1,5 +1,6 @@
 import pygame
 import sys
+from pygame.locals import *
 from load import load_image, load_sound, load_music
 #from collections import deque
 #import random
@@ -15,7 +16,7 @@ leaf_sound = load_sound('leaf.ogg')
 bomb_sound = load_sound('bomb.ogg')
 bear_explode_sound = load_sound('bear_explode.ogg')
 kirin_explode_sound = load_sound('kirin_explode.ogg')
-load_music('music_loop.ogg')
+load_music('menu_music_loop.ogg')
 
 
 class Keyboard(object):
@@ -28,9 +29,9 @@ class Keyboard(object):
             pygame.K_y: 'Y', pygame.K_z: 'Z'}
 
 class Menu:
-    def __init__(self):
+    def __init__(self, screen_size):
         #Game initial setting -> To be modified
-        self.background = pygame.Surface((500, 2000))
+        self.background = pygame.Surface((2000, 2000))
         self.background = self.background.convert()
         self.background.fill((0, 0, 0))
         self.backgroundLoc = 1500       
@@ -38,8 +39,11 @@ class Menu:
         self.clockTime = 60  # maximum FPS
         self.clock = pygame.time.Clock()
 
-        self.screen = pygame.display.set_mode((500, 500))
-        self.font = pygame.font.Font(None, 36)
+        # screen_size(스크린가로,세로), ratio(기준크기500과의 비율), screen(resizable가능)
+        self.screen_size = screen_size
+        self.ratio = (self.screen_size / 500)
+        self.screen = pygame.display.set_mode((self.screen_size, self.screen_size), HWSURFACE|DOUBLEBUF|RESIZABLE)
+        self.font = pygame.font.Font(None, round(36*self.ratio))
         # 아래 title 두줄 없어도 되는데 loginPo가 얘 기준으로 잡고있음
         self.title, self.titleRect = load_image('title.png')
         self.titleRect.midtop = self.screen.get_rect().inflate(0, -200).midtop
@@ -147,7 +151,7 @@ class Menu:
         self.showSelectModes=False
         self.showHiScores = False
         self.inSelectMenu=False
-        self.soundFX = Database().getSound()
+        self.soundFX = Database.getSound()
         self.music = Database.getSound(music=True)
         #user simple db
         self.log_test=[]
@@ -165,7 +169,8 @@ class Menu:
             
             main_menu, main_menuRect = load_image("main_menu.png")
             main_menuRect.midtop = self.screen.get_rect().midtop
-            self.screen.blit(main_menu, main_menuRect)
+            main_menu_size = (main_menu.get_width() * self.ratio, main_menu.get_height() * self.ratio)
+            self.screen.blit(pygame.transform.scale(main_menu, main_menu_size), (0,0))
 
             for event in pygame.event.get():
                 if (event.type == pygame.QUIT
@@ -173,6 +178,12 @@ class Menu:
                     and event.key == pygame.K_ESCAPE):
                     pygame.quit()
                     sys.exit()
+            # Resize windowSize
+                elif (event.type == pygame.VIDEORESIZE):
+                    self.screen_size = min(event.w, event.h)
+                    self.screen = pygame.display.set_mode((self.screen_size, self.screen_size), HWSURFACE|DOUBLEBUF|RESIZABLE)
+                    self.ratio = (self.screen_size / 500)
+                    self.font = pygame.font.Font(None, round(36*self.ratio))
                 elif (event.type == pygame.KEYDOWN
                     and event.key == pygame.K_RETURN):
                     if self.showlogin:
@@ -180,11 +191,11 @@ class Menu:
                     elif self.selection == 1:
                         self.showlogin=True 
                         self.ininitalMenu = False
-                        return 1
+                        return 1, self.screen_size
                     elif self.selection == 2:
-                        return 2
+                        return 2, self.screen_size
                     elif self.selection == 3:
-                        return 3
+                        return 3, self.screen_size
                 elif (event.type == pygame.KEYDOWN
                     and event.key == pygame.K_UP
                     and self.selection > 1
@@ -216,7 +227,8 @@ class Menu:
 
             main_menu, main_menuRect = load_image("main_menu.png")
             main_menuRect.midtop = self.screen.get_rect().midtop
-            self.screen.blit(main_menu, main_menuRect)
+            main_menu_size = (main_menu.get_width() * self.ratio, main_menu.get_height() * self.ratio)
+            self.screen.blit(pygame.transform.scale(main_menu, main_menu_size), (0,0))
 
             for event in pygame.event.get():
                 if (event.type == pygame.QUIT
@@ -224,6 +236,12 @@ class Menu:
                     and event.key == pygame.K_ESCAPE):
                     pygame.quit()
                     sys.exit()
+                # Resize windowSize
+                elif (event.type == pygame.VIDEORESIZE):
+                    self.screen_size = min(event.w, event.h)
+                    self.screen = pygame.display.set_mode((self.screen_size, self.screen_size), HWSURFACE|DOUBLEBUF|RESIZABLE)
+                    self.ratio = (self.screen_size / 500)
+                    self.font = pygame.font.Font(None, round(36*self.ratio))
                 elif (event.type == pygame.KEYDOWN
                     and event.key == pygame.K_RETURN):
                     if (self.selection==1
@@ -234,7 +252,7 @@ class Menu:
                             else: 
                                 if Database().compare_data(self.id, self.pwd):
                                     print("로그인 성공")
-                                    return self.id
+                                    return self.id, self.screen_size
                                 else:
                                     print("비번 확인")
                         elif userSelection==2: #회원가입 요청일때
@@ -244,12 +262,12 @@ class Menu:
                                     Database().add_id_data(self.id)
                                     Database().add_password_data(self.pwd, self.id)
                                     print("회원가입 성공")
-                                    return self.id
+                                    return self.id, self.screen_size
                             else:
                                 print("아이디 존재함")
                         
                     elif self.selection == 3:
-                        return False
+                        return False, self.screen_size
                     
                 elif (event.type == pygame.KEYDOWN
                     and self.selection==1
@@ -314,7 +332,8 @@ class Menu:
             self.flag=True
             main_menu, main_menuRect = load_image("main_menu.png")
             main_menuRect.midtop = self.screen.get_rect().midtop
-            self.screen.blit(main_menu, main_menuRect)
+            main_menu_size = (main_menu.get_width() * self.ratio, main_menu.get_height() * self.ratio)
+            self.screen.blit(pygame.transform.scale(main_menu, main_menu_size), (0,0))
  
             for event in pygame.event.get():
                 if (event.type == pygame.QUIT
@@ -322,6 +341,12 @@ class Menu:
                     and event.key == pygame.K_ESCAPE):
                     pygame.quit()
                     sys.exit()
+            # Resize windowSize
+                elif (event.type == pygame.VIDEORESIZE):
+                    self.screen_size = min(event.w, event.h)
+                    self.screen = pygame.display.set_mode((self.screen_size, self.screen_size), HWSURFACE|DOUBLEBUF|RESIZABLE)
+                    self.ratio = (self.screen_size / 500)
+                    self.font = pygame.font.Font(None, round(36*self.ratio))
                 elif (event.type == pygame.KEYDOWN
                     and event.key == pygame.K_RETURN):
                     if self.showSelectModes:
@@ -332,25 +357,25 @@ class Menu:
                         self.showSelectModes=True 
                         self.inMenu = False
                         self.inSelectMenu=True
-                        return 1
+                        return 1, self.screen_size
                     elif self.selection == 2:
-                        return 2
+                        return 2, self.screen_size
                     elif self.selection == 3:
                         self.soundFX = not self.soundFX
                         if self.soundFX:
                             leaf_sound.play()
-                        Database().setSound(int(self.soundFX))
+                        Database.setSound(int(self.soundFX))
                     elif self.selection == 4 and pygame.mixer:
                         self.music = not self.music
                         if self.music:
                             pygame.mixer.music.play(loops=-1)
                         else:
                             pygame.mixer.music.stop()
-                        Database().setSound(int(self.music), music=True)
+                        Database.setSound(int(self.music), music=True)
                     elif self.selection == 5:
                         self.showHelp=True                                        
                     elif self.selection == 6:
-                        return 6
+                        return 6, self.screen_size
                 elif (event.type == pygame.KEYDOWN
                     and event.key == pygame.K_UP
                     and self.selection > 1
@@ -374,6 +399,9 @@ class Menu:
                 menu, menuRect = load_image("pause.png") #Help 이미지는 예시로
                 menuRect.midtop = self.screen.get_rect().midtop
                 self.screen.blit(menu, menuRect) 
+                menu_size = (menu.get_width() * self.ratio, menu.get_height() * self.ratio)
+                self.screen.blit(pygame.transform.scale(menu, menu_size), (0,0))
+
             elif self.showSelectModes:
                 self.textOverlays = zip([self.singleText,self.timeText,self.pvpText],[self.singlePos,self.timePos,self.pvpPos])
             else:
@@ -388,6 +416,7 @@ class Menu:
             for txt, pos in self.textOverlays:
                 self.screen.blit(txt, pos)
             pygame.display.flip()
+
     def select_game_page(self):
         # Select Mode 안 글씨
         singleText = self.font.render('SINGLE MODE', 1, BLACK)
@@ -413,7 +442,8 @@ class Menu:
         while inSelectMenu:
             self.clock.tick(self.clockTime)
             self.screen.blit(self.background, (0, 0))
-            self.screen.blit(main_menu, main_menuRect)
+            main_menu_size = (main_menu.get_width() * self.ratio, main_menu.get_height() * self.ratio)
+            self.screen.blit(pygame.transform.scale(main_menu, main_menu_size), (0,0))
 
             for event in pygame.event.get():
                 if (event.type == pygame.QUIT
@@ -421,6 +451,12 @@ class Menu:
                     and event.key == pygame.K_ESCAPE):
                     pygame.quit()
                     sys.exit()
+                 # Resize windowSize
+                elif (event.type == pygame.VIDEORESIZE):
+                    self.screen_size = min(event.w, event.h)
+                    self.screen = pygame.display.set_mode((self.screen_size, self.screen_size), HWSURFACE|DOUBLEBUF|RESIZABLE)
+                    self.ratio = (self.screen_size / 500)
+                    self.font = pygame.font.Font(None, round(36*self.ratio))
                 elif (event.type == pygame.KEYDOWN
                     and event.key == pygame.K_RETURN):
                     if showSingleMode:
@@ -432,18 +468,18 @@ class Menu:
                     elif selection == 1:
                         inSelectMenu = False
                         selectMode = 'SingleMode'
-                        return selectMode
+                        return selectMode, self.screen_size
                     elif selection == 2:
                         inSelectMenu = False
                         selectMode = 'TimeMode'
-                        return selectMode
+                        return selectMode, self.screen_size
                     elif selection == 3:
                         inSelectMenu = False
                         selectMode = 'PvpMode'
-                        return selectMode
+                        return selectMode, self.screen_size
                     elif selection == 4:
                         inSelectMenu = False
-                        return BACK
+                        return BACK, self.screen_size
                 elif (event.type == pygame.KEYDOWN
                     and event.key == pygame.K_UP
                     and selection > 1
@@ -485,13 +521,20 @@ class Menu:
         while inScoreMenu:
             self.clock.tick(self.clockTime)
             self.screen.blit(self.background, (0, 0))
-            self.screen.blit(main_menu, main_menuRect)
+            main_menu_size = (main_menu.get_width() * self.ratio, main_menu.get_height() * self.ratio)
+            self.screen.blit(pygame.transform.scale(main_menu, main_menu_size), (0,0))
             for event in pygame.event.get():
                 if (event.type == pygame.QUIT
                     or event.type == pygame.KEYDOWN
                     and event.key == pygame.K_ESCAPE):
                     pygame.quit()
                     sys.exit()
+            # Resize windowSize
+                elif (event.type == pygame.VIDEORESIZE):
+                    self.screen_size = min(event.w, event.h)
+                    self.screen = pygame.display.set_mode((self.screen_size, self.screen_size), HWSURFACE|DOUBLEBUF|RESIZABLE)
+                    self.ratio = (self.screen_size / 500)
+                    self.font = pygame.font.Font(None, round(36*self.ratio))
                 elif (event.type == pygame.KEYDOWN
                     and event.key == pygame.K_RETURN):
                     if showSingleScores:
@@ -503,7 +546,7 @@ class Menu:
                     elif selection == 2:
                         showTimeScores = True
                     elif selection == 3:
-                        return BACK 
+                        return BACK, self.screen_size 
                 elif (event.type == pygame.KEYDOWN
                     and event.key == pygame.K_UP
                     and selection > 1
@@ -522,13 +565,15 @@ class Menu:
                 self.screen.blit(self.background, (0, 0))
                 menu, menuRect = load_image("menu.png")
                 menuRect.midtop = self.screen.get_rect().midtop
-                self.screen.blit(menu, menuRect)
+                menu_size = (menu.get_width() * self.ratio, menu.get_height() * self.ratio)
+                self.screen.blit(pygame.transform.scale(menu, menu_size), (0,0))
                 textOverlays = zip(self.highScoreTexts, self.highScorePos)
             elif showTimeScores:
                 self.screen.blit(self.background, (0, 0))
                 menu, menuRect = load_image("menu.png")
                 menuRect.midtop = self.screen.get_rect().midtop
-                self.screen.blit(menu, menuRect)
+                menu_size = (menu.get_width() * self.ratio, menu.get_height() * self.ratio)
+                self.screen.blit(pygame.transform.scale(menu, menu_size), (0,0))
                 textOverlays = zip(self.timeHighScoreTexts, self.timeHighScorePos)
             else:
                 textOverlays = zip([singleText, timeText,backText,self.selectText],
@@ -537,7 +582,7 @@ class Menu:
                 self.screen.blit(txt, pos)
             pygame.display.flip()
     
-    def pause_page(self,mode):
+    def pause_page(self,mode):      # 창크기조절 안건드렸음
         menuDict = {1: self.startPos, 2: self.hiScorePos, 3: self.fxPos, 
                                     4: self.musicPos, 5: self.helpPos, 6: self.quitPos}
 

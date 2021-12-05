@@ -1,6 +1,7 @@
 import pygame
 import random
 import math
+from pygame.locals import *
 from load import load_image
 
 
@@ -138,14 +139,16 @@ class LifePowerup(Powerup):
         self.pType = 'life'
 
 class Kirin(MasterSprite):
-    def __init__(self):
+    def __init__(self, screen_size):
         super().__init__()
         self.image, self.rect = load_image('kirin.png', -1)
         self.original = self.image
         self.shield, self.rect = load_image('kirin_shield.png', -1)
         # 수정 쉴드랑 조금 다른 방법이 필요함
         # self.bomb, self.rect = load_image('kirin_bomb.png', -1)
-        self.screen = pygame.display.get_surface()
+        self.screen_size = screen_size
+        self.ratio = (self.screen_size / 500)
+        self.screen = pygame.display.set_mode((self.screen_size, self.screen_size), HWSURFACE|DOUBLEBUF|RESIZABLE)
         self.area = self.screen.get_rect()
         self.rect.midbottom = (self.screen.get_width() // 2, self.area.bottom)
         self.radius = max(self.rect.width, self.rect.height)
@@ -170,7 +173,8 @@ class Kirin(MasterSprite):
         if keyState[pygame.K_d]:
             self.horiz += 2 * MasterSprite.speed
 
-    def update(self):
+    def update(self): # argument - screen_size
+        #self.screen_size = screen_size
         newpos = self.rect.move((self.horiz, self.vert))
         newhoriz = self.rect.move((self.horiz, 0))
         newvert = self.rect.move((0, self.vert))
@@ -244,11 +248,11 @@ class Kirin2(MasterSprite):
 
         if not (newpos.left <= self.area.left
                 or newpos.top <= self.area.top
-                or newpos.right >= self.area.right
+                or newpos.right >= (self.area.width / 2)
                 or newpos.bottom >= self.area.bottom):
             self.rect = newpos
         elif not (newhoriz.left <= self.area.left
-                  or newhoriz.right >= self.area.right):
+                  or newhoriz.right >= (self.area.width / 2)):
             self.rect = newhoriz
         elif not (newvert.top <= self.area.top
                   or newvert.bottom >= self.area.bottom):
@@ -290,12 +294,12 @@ class Kirin3(MasterSprite):
         newhoriz = self.rect.move((self.horiz, 0))
         newvert = self.rect.move((0, self.vert))
 
-        if not (newpos.left <= self.area.left
+        if not (newpos.left <= (self.area.width / 2)
                 or newpos.top <= self.area.top
                 or newpos.right >= self.area.right
                 or newpos.bottom >= self.area.bottom):
             self.rect = newpos
-        elif not (newhoriz.left <= self.area.left
+        elif not (newhoriz.left <= (self.area.width / 2)
                   or newhoriz.right >= self.area.right):
             self.rect = newhoriz
         elif not (newvert.top <= self.area.top
